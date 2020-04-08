@@ -25,6 +25,8 @@ const game = {
 	coronavirus: [],
 	lifes: [],
 	powerups: [],
+	powerdown: [],
+	speedup: [],
 
 	init(id) {
 		this.canvasDom = document.getElementById(id);
@@ -54,7 +56,7 @@ const game = {
 	},
 
 	moveAll() {
-		this.coronavirus.forEach((corona) => corona.move())	
+		this.coronavirus.forEach((corona) => corona.move());
 	},
 	drawAll() {
 		this.background.draw();
@@ -63,6 +65,8 @@ const game = {
 		this.bullets.forEach((bullet) => bullet.draw());
 		this.coronavirus.forEach((corona) => corona.draw());
 		this.powerups.forEach((power) => power.draw());
+		this.powerdown.forEach((power) => power.draw());
+		this.speedup.forEach((power) => power.draw());
 	},
 
 	start() {
@@ -74,34 +78,63 @@ const game = {
 			this.clearScreen();
 
 			this.drawAll();
-			this.moveAll()
+			this.moveAll();
 
-			this.frames % 250 === 0 &&
+
+			// Vida Extra
+			this.frames % 700 === 0 &&
 				this.powerups.push(
 					new powerUp(
 						this.ctx,
 						'powerup.png',
 						50,
 						50,
-						Math.floor(Math.random() * (this.canvasSize.w - 50)),
+						Math.floor(Math.random() * (this.canvasSize.w - 100)),
 						0,
 						1
 					)
 				);
-				console.log(this.lifes);
+
+			// Slow Down
+			this.frames % 400 === 0 &&
+				this.powerdown.push(
+					new powerDown(
+						this.ctx,
+						'snail.png',
+						50,
+						50,
+						Math.floor(Math.random() * (this.canvasSize.w - 100)),
+						0,
+						1
+					)
+				);
+
+			// Speed up
+			this.frames % 1000 === 0 &&
+				this.speedup.push(
+					new speedUp(
+						this.ctx,
+						'speedup.png',
+						50,
+						50,
+						Math.floor(Math.random() * (this.canvasSize.w - 100)),
+						0,
+						1
+					)
+				);
+			
+			// vida extra tras colisionar player con vida extra
 			this.powerups.forEach(
 				(power, idx) => {
 					power.draw();
 					power.move();
-					
-					if (this.isCollision(this.player, power)) { 
-						this.powerups.pop()
-						this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + (this.lifes.length *50), 20))
-					}
-						
-					
 
+					if (this.isCollision(this.player, power)) {
+						this.powerups.splice(idx, 1);
+						this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + this.lifes.length * 50, 20));
+					}
 				},
+				// divide el coronavirus, quita la bala
 				this.coronavirus.forEach((corona, idx) => {
 					this.bullets.forEach((bullet, index) => {
 						if (this.isCollision(bullet, corona)) {
@@ -109,15 +142,55 @@ const game = {
 							this.divideCoronavirus(corona, idx);
 						}
 					});
-				}),
-				this.coronavirus.forEach((corona) => {
-					if (this.isCollision(this.player, corona)) {
-						this.lifes.pop();
-					}
 				})
-			),
-				this.clearBullets();
-			// this.isCollision(this.coronavirus, this.player) ? this.gameOver() : null;
+			);
+
+			// slow down tras colisionar con player
+			this.powerdown.forEach((power, idx) => {
+				power.draw();
+				power.move();
+
+				if (this.isCollision(this.player, power)) {
+					this.powerdown.splice(idx, 1);
+					this.player.velX -= 10;
+				}
+			});
+
+
+			// speed up tras colisionar con player
+			this.speedup.forEach((power, idx) => {
+				power.draw();
+				power.move();
+
+				if (this.isCollision(this.player, power)) {
+					this.speedup.splice(idx, 1);
+
+					this.player.velX += 1;
+				}
+			});
+
+			// cambia de direccion tras colisionar con player y quita una vida
+			this.coronavirus.forEach((corona) => {
+				if (this.isCollision(corona, this.player)) {
+					corona.velX *= -1;
+					corona.velY *= -1;
+					this.lifes.pop();
+				}
+			});
+
+			// set game over si no hay mas vidas
+			if (this.lifes.length === 0) {
+				this.gameOver();
+			}
+
+			// set you win si no hay mas coronavirus
+			if (this.coronavirus.length === 0) {
+				console.log(this.coronavirus.length);
+
+				this.youWon();
+			}
+
+			this.clearBullets();
 		}, 1000 / this.fps);
 	},
 
@@ -132,16 +205,27 @@ const game = {
 	},
 
 	reset() {
-		this.background = new Background(this.ctx, 'bg-g.png', this.canvasSize.w, this.canvasSize.h)
-		
-			this.player = new Player(this.ctx, 'Juanito.png', this.canvasSize.w, this.canvasSize.h, this.keys);
-			console.log(this.canvasSize.h);
-			
-			this.coronavirus.push(new Coronavirus(this.ctx, 'coronito.gif', 100, 100, 3, 0.1, 10, 10, undefined, this.canvasSize.w, this.canvasSize.h));
-			this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100, 20));
-			this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1150, 20));
-			this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1200, 20));
-		
+		this.background = new Background(this.ctx, 'bg-g.png', this.canvasSize.w, this.canvasSize.h);
+
+		this.player = new Player(this.ctx, 'Juanito.png', this.canvasSize.w, this.canvasSize.h, this.keys);
+		this.coronavirus.push(
+			new Coronavirus(
+				this.ctx,
+				'coronito.gif',
+				300,
+				300,
+				3,
+				0.1,
+				10,
+				10,
+				undefined,
+				this.canvasSize.w,
+				this.canvasSize.h
+			)
+		);
+		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100, 20));
+		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1150, 20));
+		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1200, 20));
 	},
 
 	isCollision(obj1, obj2) {
@@ -158,22 +242,19 @@ const game = {
 		let nextDivision = ++deletedCoronavirus.actualDivision;
 
 		if (nextDivision < deletedCoronavirus.maxDivision) {
-			console.log(this.coronavirus);
-
 			this.coronavirus.push(
 				new Coronavirus(
 					this.ctx,
 					'coronito.gif',
 					deletedCoronavirus.sizes.w / 2,
 					deletedCoronavirus.sizes.h / 2,
-					(deletedCoronavirus.velX *= 1),
-					deletedCoronavirus.velY,
+					(deletedCoronavirus.velX *= 1.3),
+					deletedCoronavirus.velY *= 1.3,
 					deletedCoronavirus.posX + 50,
 					deletedCoronavirus.posY,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH
-
 				)
 			);
 			this.coronavirus.push(
@@ -182,8 +263,8 @@ const game = {
 					'coronito.gif',
 					deletedCoronavirus.sizes.w / 2,
 					deletedCoronavirus.sizes.h / 2,
-					(deletedCoronavirus.velX *= -1),
-					deletedCoronavirus.velY,
+					(deletedCoronavirus.velX *= -1.3),
+					deletedCoronavirus.velY *= 1.3,
 					deletedCoronavirus.posX - 50,
 					deletedCoronavirus.posY,
 					nextDivision,
@@ -199,8 +280,15 @@ const game = {
 	},
 
 	gameOver() {
+		alert('YOU LOSE, TRY AGAIN!');
+		// clearInterval(this.interval)
+		document.location.reload();
+		window.clearInterval(this.interval);
+	},
+
+	youWon() {
 		clearInterval(this.interval);
-		this.ctx.font = 'bold 22px sans-serif';
-		this.ctx.fillText('Play again', window.innerWidth / 2, window.innerHeight / 2);
+		alert('YOU WIN, CONGRATULATIONS!');
+		document.location.reload();
 	}
 };

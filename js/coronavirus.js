@@ -34,8 +34,6 @@ class Coronavirus {
 	}
 
 	move() {
-		console.log(this.canvasW, this.canvasH);
-		
 		// add movement
 		this.posX += this.velX;
 		// adds gravity

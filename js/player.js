@@ -22,6 +22,15 @@ class Player {
 		this.playerImage.onload = () => {
 			this.draw();
 		};
+		//  this.keys = {
+        //     LEFT_KEY: playerKeys.LEFT_KEY,
+        //     RIGHT_KEY: playerKeys.RIGHT_KEY,
+        //     ARROW_UP: playerKeys.ARROW_UP
+        // }
+        // this.keyState = {
+        //     keyLeft: false,
+        //     keyRight: false
+        // }
 	}
 
 	draw() {
