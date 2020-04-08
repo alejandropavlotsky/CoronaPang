@@ -34,7 +34,6 @@ const game = {
 		this.canvasDom = document.getElementById(id);
 		this.ctx = this.canvasDom.getContext('2d');
 		this.setDimensions();
-		// this.setEventListeners();
 		this.setListeners();
 		this.start();
 	},
@@ -50,43 +49,37 @@ const game = {
 		this.ctx.clearRect(0, 0, this.canvasSize.w, this.canvasSize.h);
 	},
 
-	// setEventListeners() {
-	// 	document.onkeyup = (e) => {
-	// 		e.keyCode === this.keys.SPACE ? this.newBullet() : null;
-	// 		e.keyCode === this.keys.LEFT ? this.player.move('left') : null;
-	// 		e.keyCode === this.keys.RIGHT ? this.player.move('right') : null;
-	// 	};
-	// },
 
 	setListeners() {
 		document.addEventListener('keydown', (e) => {
 			e.preventDefault();
 			if (e.keyCode === this.keys.LEFT) {
-				this.player.move('left');
-				this.keyState.keyLeft = true;
+				this.player.keyState.keyLeft = true;
 			}
 			if (e.keyCode === this.keys.RIGHT) {
-				this.player.move('right');
-				this.keyState.keyRight = true;
+				this.player.keyState.keyRight = true;
 			}
 			if (e.keyCode === this.keys.SPACE) {
-				if (this.bullets.length < 3) this.newBullet();
+				this.newBullet();
 			}
 		});
 
 		document.addEventListener('keyup', (e) => {
 			e.preventDefault();
 			if (e.keyCode === this.keys.LEFT) {
-				this.keyState.keyLeft = false;
+				this.player.keyState.keyLeft = false;
 			}
 			if (e.keyCode === this.keys.RIGHT) {
-				this.keyState.keyRight = false;
+				this.player.keyState.keyRight = false;
 			}
 		});
 	},
 
 	moveAll() {
 		this.coronavirus.forEach((corona) => corona.move());
+		this.player.move()
+		console.log(this.player.keyState);
+		
 	},
 	drawAll() {
 		this.background.draw();
@@ -102,6 +95,7 @@ const game = {
 	start() {
 		this.reset();
 		this.interval = setInterval(() => {
+			
 			this.frames > 5000 ? (this.frames = 0) : null;
 			this.frames++;
 
@@ -189,6 +183,8 @@ const game = {
 				if (this.isCollision(this.player, shoot)) {
 					this.shootmore.splice(idx, 1);
 					this.scorePoints(50);
+					this.player.canShoot = true //
+					
 				}
 			});
 
@@ -223,6 +219,7 @@ const game = {
 					corona.velX *= -1;
 					corona.velY *= -1;
 					this.lifes.pop();
+					this.lessScorePoints(150)
 				}
 			});
 
@@ -244,12 +241,14 @@ const game = {
 
 	newBullet() {
 		// create an instance of bullet after pressing SPACE bar
-		this.bullets.push(new Bullet(this.ctx, 'waterdrop.png', 10, 100, this.player.posX, this.player.posY));
+		if (this.bullets.length < 1) {
+			this.bullets.push(new Bullet(this.ctx, 'waterdrop.png', 10, 100, this.player.posX, this.player.posY));
+		}
 	},
 
 	clearBullets() {
 		// clear the bullets after they are off screen
-		this.bullets = this.bullets.filter((elm) => elm.posY > 0);
+		this.bullets = this.bullets.filter((elm) => elm.posY + elm.sizes.h > 0);
 	},
 
 	reset() {
@@ -260,8 +259,8 @@ const game = {
 			new Coronavirus(
 				this.ctx,
 				'coronito.gif',
-				300,
-				300,
+				250,
+				250,
 				3,
 				0.1,
 				10,
@@ -307,12 +306,12 @@ const game = {
 				new Coronavirus(
 					this.ctx,
 					'coronito.gif',
-					deletedCoronavirus.sizes.w / 2,
-					deletedCoronavirus.sizes.h / 2,
-					(deletedCoronavirus.velX *= 1),
-					(deletedCoronavirus.velY *= 1),
+					deletedCoronavirus.sizes.w / 1.7,
+					deletedCoronavirus.sizes.h / 1.7,
+					(deletedCoronavirus.velX *= 1.05),
+					(deletedCoronavirus.velY *= 1.05),
 					deletedCoronavirus.posX + 50,
-					deletedCoronavirus.posY,
+					deletedCoronavirus.posY - deletedCoronavirus.posY +150,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH,
@@ -323,12 +322,12 @@ const game = {
 				new Coronavirus(
 					this.ctx,
 					'coronito.gif',
-					deletedCoronavirus.sizes.w / 2,
-					deletedCoronavirus.sizes.h / 2,
-					(deletedCoronavirus.velX *= -1),
-					(deletedCoronavirus.velY *= 1),
+					deletedCoronavirus.sizes.w / 1.7,
+					deletedCoronavirus.sizes.h / 1.7,
+					(deletedCoronavirus.velX *= -1.05),
+					(deletedCoronavirus.velY *= 1.05),
 					deletedCoronavirus.posX - 50,
-					deletedCoronavirus.posY,
+					deletedCoronavirus.posY - deletedCoronavirus.posY +150,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH,
