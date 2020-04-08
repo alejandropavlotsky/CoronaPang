@@ -19,6 +19,7 @@ const game = {
 		RIGHT: 39,
 		SPACE: 32
 	},
+	score: 0,
 	player: undefined,
 	frames: 0,
 	bullets: [],
@@ -27,12 +28,14 @@ const game = {
 	powerups: [],
 	powerdown: [],
 	speedup: [],
+	shootmore: [],
 
 	init(id) {
 		this.canvasDom = document.getElementById(id);
 		this.ctx = this.canvasDom.getContext('2d');
 		this.setDimensions();
-		this.setEventListeners();
+		// this.setEventListeners();
+		this.setListeners();
 		this.start();
 	},
 
@@ -47,12 +50,39 @@ const game = {
 		this.ctx.clearRect(0, 0, this.canvasSize.w, this.canvasSize.h);
 	},
 
-	setEventListeners() {
-		document.onkeyup = (e) => {
-			e.keyCode === this.keys.SPACE ? this.newBullet() : null;
-			e.keyCode === this.keys.LEFT ? this.player.move('left') : null;
-			e.keyCode === this.keys.RIGHT ? this.player.move('right') : null;
-		};
+	// setEventListeners() {
+	// 	document.onkeyup = (e) => {
+	// 		e.keyCode === this.keys.SPACE ? this.newBullet() : null;
+	// 		e.keyCode === this.keys.LEFT ? this.player.move('left') : null;
+	// 		e.keyCode === this.keys.RIGHT ? this.player.move('right') : null;
+	// 	};
+	// },
+
+	setListeners() {
+		document.addEventListener('keydown', (e) => {
+			e.preventDefault();
+			if (e.keyCode === this.keys.LEFT) {
+				this.player.move('left');
+				this.keyState.keyLeft = true;
+			}
+			if (e.keyCode === this.keys.RIGHT) {
+				this.player.move('right');
+				this.keyState.keyRight = true;
+			}
+			if (e.keyCode === this.keys.SPACE) {
+				if (this.bullets.length < 3) this.newBullet();
+			}
+		});
+
+		document.addEventListener('keyup', (e) => {
+			e.preventDefault();
+			if (e.keyCode === this.keys.LEFT) {
+				this.keyState.keyLeft = false;
+			}
+			if (e.keyCode === this.keys.RIGHT) {
+				this.keyState.keyRight = false;
+			}
+		});
 	},
 
 	moveAll() {
@@ -79,14 +109,28 @@ const game = {
 
 			this.drawAll();
 			this.moveAll();
-
+			this.drawScore();
 
 			// Vida Extra
-			this.frames % 700 === 0 &&
+			this.frames % 1500 === 0 &&
 				this.powerups.push(
 					new powerUp(
 						this.ctx,
 						'powerup.png',
+						50,
+						50,
+						Math.floor(Math.random() * (this.canvasSize.w - 100)),
+						0,
+						1
+					)
+				);
+
+			// Double shot
+			this.frames % 1000 === 0 &&
+				this.shootmore.push(
+					new shootMore(
+						this.ctx,
+						'doubleshoot.png',
 						50,
 						50,
 						Math.floor(Math.random() * (this.canvasSize.w - 100)),
@@ -110,7 +154,7 @@ const game = {
 				);
 
 			// Speed up
-			this.frames % 1000 === 0 &&
+			this.frames % 750 === 0 &&
 				this.speedup.push(
 					new speedUp(
 						this.ctx,
@@ -122,28 +166,31 @@ const game = {
 						1
 					)
 				);
-			
-			// vida extra tras colisionar player con vida extra
-			this.powerups.forEach(
-				(power, idx) => {
-					power.draw();
-					power.move();
 
-					if (this.isCollision(this.player, power)) {
-						this.powerups.splice(idx, 1);
-						this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + this.lifes.length * 50, 20));
-					}
-				},
-				// divide el coronavirus, quita la bala
-				this.coronavirus.forEach((corona, idx) => {
-					this.bullets.forEach((bullet, index) => {
-						if (this.isCollision(bullet, corona)) {
-							this.killBullet(index);
-							this.divideCoronavirus(corona, idx);
-						}
-					});
-				})
-			);
+			// vida extra tras colisionar player con vida extra
+			this.powerups.forEach((power, idx) => {
+				power.draw();
+				power.move();
+
+				if (this.isCollision(this.player, power)) {
+					this.powerups.splice(idx, 1);
+					this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + this.lifes.length * 50, 20));
+					this.scorePoints(50);
+				}
+			});
+			// hit coronavirus method
+			this.hitCoronavirus();
+
+			// double shoot tras colisionar con shootmore
+			this.shootmore.forEach((shoot, idx) => {
+				shoot.draw();
+				shoot.move();
+				// shoot.setNewListener()
+				if (this.isCollision(this.player, shoot)) {
+					this.shootmore.splice(idx, 1);
+					this.scorePoints(50);
+				}
+			});
 
 			// slow down tras colisionar con player
 			this.powerdown.forEach((power, idx) => {
@@ -153,9 +200,9 @@ const game = {
 				if (this.isCollision(this.player, power)) {
 					this.powerdown.splice(idx, 1);
 					this.player.velX -= 10;
+					this.lessScorePoints(50);
 				}
 			});
-
 
 			// speed up tras colisionar con player
 			this.speedup.forEach((power, idx) => {
@@ -166,6 +213,7 @@ const game = {
 					this.speedup.splice(idx, 1);
 
 					this.player.velX += 1;
+					this.scorePoints(50);
 				}
 			});
 
@@ -220,7 +268,8 @@ const game = {
 				10,
 				undefined,
 				this.canvasSize.w,
-				this.canvasSize.h
+				this.canvasSize.h,
+				0.1
 			)
 		);
 		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100, 20));
@@ -237,6 +286,18 @@ const game = {
 		);
 	},
 
+	hitCoronavirus() {
+		this.coronavirus.forEach((corona, idx) => {
+			this.bullets.forEach((bullet, index) => {
+				if (this.isCollision(bullet, corona)) {
+					this.killBullet(index);
+					this.divideCoronavirus(corona, idx);
+					this.scorePoints(100);
+				}
+			});
+		});
+	},
+
 	divideCoronavirus(corona, idx) {
 		let deletedCoronavirus = this.coronavirus.splice(idx, 1)[0];
 		let nextDivision = ++deletedCoronavirus.actualDivision;
@@ -248,13 +309,14 @@ const game = {
 					'coronito.gif',
 					deletedCoronavirus.sizes.w / 2,
 					deletedCoronavirus.sizes.h / 2,
-					(deletedCoronavirus.velX *= 1.3),
-					deletedCoronavirus.velY *= 1.3,
+					(deletedCoronavirus.velX *= 1),
+					(deletedCoronavirus.velY *= 1),
 					deletedCoronavirus.posX + 50,
 					deletedCoronavirus.posY,
 					nextDivision,
 					deletedCoronavirus.canvasW,
-					deletedCoronavirus.canvasH
+					deletedCoronavirus.canvasH,
+					(deletedCoronavirus.gravity += 0.0111)
 				)
 			);
 			this.coronavirus.push(
@@ -263,13 +325,14 @@ const game = {
 					'coronito.gif',
 					deletedCoronavirus.sizes.w / 2,
 					deletedCoronavirus.sizes.h / 2,
-					(deletedCoronavirus.velX *= -1.3),
-					deletedCoronavirus.velY *= 1.3,
+					(deletedCoronavirus.velX *= -1),
+					(deletedCoronavirus.velY *= 1),
 					deletedCoronavirus.posX - 50,
 					deletedCoronavirus.posY,
 					nextDivision,
 					deletedCoronavirus.canvasW,
-					deletedCoronavirus.canvasH
+					deletedCoronavirus.canvasH,
+					(deletedCoronavirus.gravity += 0.0111)
 				)
 			);
 		}
@@ -280,15 +343,37 @@ const game = {
 	},
 
 	gameOver() {
-		alert('YOU LOSE, TRY AGAIN!');
-		// clearInterval(this.interval)
-		document.location.reload();
-		window.clearInterval(this.interval);
-	},
+		clearInterval(this.interval);
 
+		// window.clearInterval(this.interval);
+		document.getElementById('canvas').style.display = 'none';
+		document.getElementById('lose-score').style.display = 'block';
+		document.getElementById('lose-points').innerHTML = `${this.score} `;
+		document.getElementById('lose-start-button').onclick = () => {
+			document.location.reload();
+		};
+	},
 	youWon() {
 		clearInterval(this.interval);
-		alert('YOU WIN, CONGRATULATIONS!');
-		document.location.reload();
+		document.getElementById('canvas').style.display = 'none';
+		document.getElementById('win-score').style.display = 'block';
+		document.getElementById('win-points').innerHTML = `${this.score} `;
+		document.getElementById('win-start-button').onclick = () => {
+			document.location.reload();
+		};
+	},
+
+	drawScore() {
+		this.ctx.fillStyle = 'white';
+		this.ctx.font = '20px sans-serif';
+		this.ctx.fillText(`Points: ${this.score}`, 40, 40);
+	},
+
+	scorePoints(morePoints) {
+		this.score += morePoints;
+	},
+
+	lessScorePoints(lessPoints) {
+		this.score -= lessPoints;
 	}
 };

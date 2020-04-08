@@ -7,6 +7,23 @@
     <title>Game</title>
 </head>
 <body>
+
+    <div id="win-score">
+        <div class="win-score">
+            <h2>You win, congratulations!</h2>
+            <p>You have <span id="win-points">0</span>points</p>
+            <button id="win-start-button">Re-Start Game</button>
+        </div>
+    </div>
+
+       <div id="lose-score">
+           <div class="lose-score">
+                <h2>You lose, try again</h2>
+                <p>You have <span id="lose-points">0</span>points</p>
+                <button id="lose-start-button">Re-Start Game</button>
+           </div>
+       </div>
+
     <div id="game-intro" class="game-intro">
         <div>
             <img src="./img/Juanito.png" alt="" class="logo-img" />
@@ -27,6 +44,7 @@
 
     <canvas id="canvas"></canvas>
     
+    <script src="js/shootMore.js"></script>
     <script src="js/speedUp.js"></script>
     <script src="js/powerDown.js"></script>
     <script src="js/powerUp.js"></script>

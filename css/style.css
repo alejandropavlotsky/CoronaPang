@@ -29,17 +29,19 @@ body{
     color: #323232;
 
 }   
-#start-button{
+#start-button,
+#win-start-button,
+#lose-start-button {
     font-size: 1.5em;
     padding: 10px 20px;
     border-radius: 5px;
     border: 0;
-    background-color: #323232;
+    background-color: black;
     color: #ffac41;
     cursor: pointer;
     transition: all .2s;
 }
-#start-button:hover{
+#start-button:hover, #win-start-button, #lose-start-button{
     transform: scale(.97);
 }
 p{
@@ -47,4 +49,24 @@ p{
 }
 #canvas{
     display: none;
+}
+#win-score, #lose-score{
+    background-image: url(../img/bg-g.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    display: none;
+    border: 2px solid #ffac41;
+    border-radius: 10px;
+    color: #ffac41;
+    margin: 100px auto;
+    height: 50vh;
+    width: 50vw;
+}
+
+.win-score, .lose-score{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
 }

@@ -11,7 +11,6 @@ class Player {
 			w: 100,
 			h: 100
 		};
-		this.keys = keys;
 		// start position
 		this.posX = this.canvasSizes.w / 2 - this.sizes.w / 2;
 		this.posY = this.canvasSizes.h - this.sizes.h * 1.5;
@@ -22,15 +21,13 @@ class Player {
 		this.playerImage.onload = () => {
 			this.draw();
 		};
-		//  this.keys = {
-        //     LEFT_KEY: playerKeys.LEFT_KEY,
-        //     RIGHT_KEY: playerKeys.RIGHT_KEY,
-        //     ARROW_UP: playerKeys.ARROW_UP
-        // }
-        // this.keyState = {
-        //     keyLeft: false,
-        //     keyRight: false
-        // }
+		
+		this.keys = keys;
+
+        this.keyState = {
+            keyLeft: false,
+            keyRight: false
+        }
 	}
 
 	draw() {
@@ -52,3 +49,19 @@ class Player {
 		return this.posX >= this.canvasSizes.w - this.sizes.w * 1.3 ? true : false;
 	}
 }
+
+// move() {
+//         if (this.keyState.keyLeft && this.posX > this.leftLimit) {
+//             this.posX -= this.velX
+//         }
+//         if (this.keyState.keyRight && this.posX + this.width < this.rigthLimit) {
+//             this.posX += this.velX
+//         }
+//         if(this.posY <= this.posY0 && this.isFloating === false) {
+//             this.posY += this.velY;
+//             this.velY += this.gravity;
+//           } else if(this.isFloating === false) {
+//             this.velY = 1;
+//             this.posY = this.posY0;
+//           }
+//     }
