@@ -32,8 +32,12 @@ const game = {
 	shootmore: [],
 	backgroundAudio: new Audio('./sound/AlchemistsTale.mp3'),
 	extraLifeAudio: new Audio('./sound/woohoo.mp3'),
-	lifeTakenAudio: new Audio('./sound/doh.mp3'),
-	powerDownAudio: new Audio('./sound/haha.mp3'),
+	lifeTakenAudio: new Audio('./sound/ouch.mp3'),
+	powerUpAudio: new Audio('./sound/whipi.mp3'),
+	powerDownAudio: new Audio('./sound/ohoh.mp3'),
+	shootMoreAudio: new Audio('./sound/whoo.mp3'),
+	separateCoronavirusSound: new Audio('./sound/pop.mp3'),
+	shootSound: new Audio('./sound/bang.mp3'),
 	winSound: new Audio('./sound/yeah.mp3'),
 	loseSound: new Audio('./sound/booing.mp3'),
 
@@ -67,6 +71,7 @@ const game = {
 			}
 			if (e.keyCode === this.keys.SPACE) {
 				this.newBullet();
+				this.shootSound.play();
 			}
 		});
 
@@ -84,17 +89,6 @@ const game = {
 	moveAll() {
 		this.coronavirus.forEach((corona) => corona.move());
 		this.player.move();
-	},
-
-	drawAll() {
-		this.background.draw();
-		this.player.draw();
-		this.lifes.forEach((life) => life.draw());
-		this.bullets.forEach((bullet) => bullet.draw());
-		this.coronavirus.forEach((corona) => corona.draw());
-		this.powerups.forEach((power) => power.draw());
-		this.powerdown.forEach((power) => power.draw());
-		this.speedup.forEach((power) => power.draw());
 	},
 
 	start() {
@@ -127,6 +121,17 @@ const game = {
 		}, 1000 / this.fps);
 	},
 
+	drawAll() {
+		this.background.draw();
+		this.player.draw();
+		this.lifes.forEach((life) => life.draw());
+		this.bullets.forEach((bullet) => bullet.draw());
+		this.coronavirus.forEach((corona) => corona.draw());
+		this.powerups.forEach((power) => power.draw());
+		this.powerdown.forEach((power) => power.draw());
+		this.speedup.forEach((power) => power.draw());
+		this.shootmore.forEach((power) => power.draw());
+	},
 	powerUpsAppear() {
 		// Vida Extra
 		this.frames % 1500 === 0 &&
@@ -208,7 +213,7 @@ const game = {
 
 			if (this.isCollision(this.player, power)) {
 				this.speedup.splice(idx, 1);
-				this.extraLifeAudio.play();
+				this.powerUpAudio.play();
 				this.player.velX += 3;
 				this.scorePoints(50);
 			}
@@ -223,7 +228,7 @@ const game = {
 
 			if (this.isCollision(this.player, power)) {
 				this.powerups.splice(idx, 1);
-				this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + this.lifes.length * 50, 20));
+				this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1200 , (20 + this.lifes.length * 50)));
 				this.extraLifeAudio.play();
 				this.scorePoints(50);
 			}
@@ -239,7 +244,7 @@ const game = {
 				this.shootmore.splice(idx, 1);
 				this.scorePoints(50);
 				this.player.canShoot = true;
-				this.extraLifeAudio.play();
+				this.shootMoreAudio.play();
 				setTimeout(() => {
 					this.player.canShoot = false;
 				}, 5000);
@@ -290,12 +295,12 @@ const game = {
 				this.canvasSize.w,
 				this.canvasSize.h,
 				0.1,
-				200
+				190
 			)
 		);
-		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100, 20));
-		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1150, 20));
 		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1200, 20));
+		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1200, 70));
+		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1200, 120));
 	},
 
 	isCollision(obj1, obj2) {
@@ -311,19 +316,27 @@ const game = {
 		// vertical and horizontal distance between the circle center and the rectangle center
 		let distX = Math.abs(obj2.posX - obj1.posX - obj1.sizes.w / 2);
 		let distY = Math.abs(obj2.posY - obj1.posY - obj1.sizes.h / 2);
-		
+
 		// if the distance is greater than half Circle + half rect they are too far apart to be colliding
-		if (distX > (obj1.sizes.w / 2 + obj2.radius)) { return false; }
-		if (distY > (obj1.sizes.h / 2 + obj2.radius)) { return false; }
+		if (distX > obj1.sizes.w / 2 + obj2.radius) {
+			return false;
+		}
+		if (distY > obj1.sizes.h / 2 + obj2.radius) {
+			return false;
+		}
 
 		//if the distance is less than half rect they collide
-		if (distX <= (obj1.sizes.w / 2)) { return true; }
-		if (distY <= (obj1.sizes.h / 2)) { return true; }
+		if (distX <= obj1.sizes.w / 2) {
+			return true;
+		}
+		if (distY <= obj1.sizes.h / 2) {
+			return true;
+		}
 
 		// test for collision at rect corner
 		let dx = distX - obj1.sizes.w / 2;
 		let dy = distY - obj1.sizes.h / 2;
-		return (dx * dx + dy * dy <= (obj2.radius * obj2.radius));
+		return dx * dx + dy * dy <= obj2.radius * obj2.radius;
 	},
 
 	hitCoronavirus() {
@@ -333,6 +346,7 @@ const game = {
 				if (this.isRoundCollision(bullet, corona)) {
 					this.killBullet(index);
 					this.divideCoronavirus(corona, idx);
+					this.separateCoronavirusSound.play();
 					this.scorePoints(100);
 				}
 			});
@@ -350,15 +364,15 @@ const game = {
 					'coronito.gif',
 					deletedCoronavirus.sizes.w / 1.7,
 					deletedCoronavirus.sizes.h / 1.7,
-					(deletedCoronavirus.velX *= 1.05),
-					(deletedCoronavirus.velY *= 1.05),
+					(deletedCoronavirus.velX *= 1.15),
+					(deletedCoronavirus.velY),
 					deletedCoronavirus.posX + 50,
-					deletedCoronavirus.posY - deletedCoronavirus.posY + 150,
+					deletedCoronavirus.posY,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH,
 					(deletedCoronavirus.gravity += 0.0111),
-					deletedCoronavirus.radius /1.7
+					deletedCoronavirus.radius / 1.7
 				)
 			);
 			this.coronavirus.push(
@@ -367,15 +381,15 @@ const game = {
 					'coronito.gif',
 					deletedCoronavirus.sizes.w / 1.7,
 					deletedCoronavirus.sizes.h / 1.7,
-					(deletedCoronavirus.velX *= -1.05),
-					(deletedCoronavirus.velY *= 1.05),
+					(deletedCoronavirus.velX *= -1.15),
+					(deletedCoronavirus.velY),
 					deletedCoronavirus.posX - 50,
-					deletedCoronavirus.posY - deletedCoronavirus.posY + 150,
+					deletedCoronavirus.posY,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH,
 					(deletedCoronavirus.gravity += 0.0111),
-					deletedCoronavirus.radius /1.7
+					deletedCoronavirus.radius / 1.7
 				)
 			);
 		}

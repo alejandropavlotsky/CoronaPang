@@ -44,10 +44,16 @@ class Coronavirus {
 		this.velY += this.gravity;
 		this.posY += this.velY;
 		// Collide with canvas		
-		this.posY > this.canvasH - (this.sizes.h -10) ? (this.velY *= -1) : null;
+		if (this.posY > this.canvasH - (this.sizes.h -10)) { 
+			this.velY *= -.98
+			this.posY -=30
+		} 
 		this.posY < 0 ? (this.velY *= -1) : null;
 		
-		this.posX > this.canvasW - this.sizes.w ? (this.velX *= -1) : null;
+		if (this.posX > this.canvasW - this.sizes.w) {
+			this.velX *= -.98
+			this.posX -=20
+		} 
 		this.posX < 0 ? (this.velX *= -1) : null;
 
 	}
