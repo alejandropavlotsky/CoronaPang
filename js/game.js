@@ -30,12 +30,12 @@ const game = {
 	powerdown: [],
 	speedup: [],
 	shootmore: [],
-	backgroundAudio: new Audio('./sound/AlchemistsTale.wav'),
-	extraLifeAudio: new Audio('./sound/woohoo.wav'),
-	lifeTakenAudio: new Audio('./sound/doh.wav'),
-	powerDownAudio: new Audio('./sound/haha.wav'),
-	winSound: new Audio('./sound/yeah.wav'),
-	loseSound: new Audio('./sound/booing.wav'),
+	backgroundAudio: new Audio('./sound/AlchemistsTale.mp3'),
+	extraLifeAudio: new Audio('./sound/woohoo.mp3'),
+	lifeTakenAudio: new Audio('./sound/doh.mp3'),
+	powerDownAudio: new Audio('./sound/haha.mp3'),
+	winSound: new Audio('./sound/yeah.mp3'),
+	loseSound: new Audio('./sound/booing.mp3'),
 
 	init(id) {
 		this.canvasDom = document.getElementById(id);
