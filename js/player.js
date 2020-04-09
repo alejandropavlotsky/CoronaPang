@@ -14,7 +14,7 @@ class Player {
 		// start position
 		this.posX = this.canvasSizes.w / 2 - this.sizes.w / 2;
 		this.posY = this.canvasSizes.h - this.sizes.h * 1.5;
-		this.velX = 20;
+		this.velX = 10;
         // load image
 		this.playerImage = new Image();
 		this.playerImage.src = `img/${this.url}`;
@@ -27,8 +27,11 @@ class Player {
         this.keyState = {
 			keyLeft: false,
             keyRight: false
-        }
+		}
+		this.canShoot = false
 	}
+
+
 
 	draw() {
 		this.ctx.drawImage(this.playerImage, this.posX, this.posY, this.sizes.w, this.sizes.h);

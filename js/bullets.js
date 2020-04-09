@@ -9,7 +9,7 @@ class Bullet {
 		
 
 		// start position
-		this.posX = playerposX * 1.07;
+		this.posX = playerposX +40 ;
 		this.posY = playerposY / 1.15;
 		// start velocity
 		this.velY = 10;

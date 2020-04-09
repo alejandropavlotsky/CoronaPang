@@ -9,6 +9,7 @@ const game = {
 	canvasDom: undefined,
 	ctx: undefined,
 	fps: 60,
+	// timeLimit: 0,
 	canvasSize: {
 		w: undefined,
 		h: undefined
@@ -29,6 +30,12 @@ const game = {
 	powerdown: [],
 	speedup: [],
 	shootmore: [],
+	backgroundAudio: new Audio('./sound/AlchemistsTale.wav'),
+	extraLifeAudio: new Audio('./sound/woohoo.wav'),
+	lifeTakenAudio: new Audio('./sound/doh.wav'),
+	powerDownAudio: new Audio('./sound/haha.wav'),
+	winSound: new Audio('./sound/yeah.wav'),
+	loseSound: new Audio('./sound/booing.wav'),
 
 	init(id) {
 		this.canvasDom = document.getElementById(id);
@@ -48,7 +55,6 @@ const game = {
 	clearScreen() {
 		this.ctx.clearRect(0, 0, this.canvasSize.w, this.canvasSize.h);
 	},
-
 
 	setListeners() {
 		document.addEventListener('keydown', (e) => {
@@ -77,10 +83,9 @@ const game = {
 
 	moveAll() {
 		this.coronavirus.forEach((corona) => corona.move());
-		this.player.move()
-		console.log(this.player.keyState);
-		
+		this.player.move();
 	},
+
 	drawAll() {
 		this.background.draw();
 		this.player.draw();
@@ -94,154 +99,170 @@ const game = {
 
 	start() {
 		this.reset();
+		this.backgroundAudio.play();
 		this.interval = setInterval(() => {
-			
 			this.frames > 5000 ? (this.frames = 0) : null;
 			this.frames++;
-
 			this.clearScreen();
-
 			this.drawAll();
 			this.moveAll();
 			this.drawScore();
-
-			// Vida Extra
-			this.frames % 1500 === 0 &&
-				this.powerups.push(
-					new powerUp(
-						this.ctx,
-						'powerup.png',
-						50,
-						50,
-						Math.floor(Math.random() * (this.canvasSize.w - 100)),
-						0,
-						1
-					)
-				);
-
-			// Double shot
-			this.frames % 1000 === 0 &&
-				this.shootmore.push(
-					new shootMore(
-						this.ctx,
-						'doubleshoot.png',
-						50,
-						50,
-						Math.floor(Math.random() * (this.canvasSize.w - 100)),
-						0,
-						1
-					)
-				);
-
-			// Slow Down
-			this.frames % 400 === 0 &&
-				this.powerdown.push(
-					new powerDown(
-						this.ctx,
-						'snail.png',
-						50,
-						50,
-						Math.floor(Math.random() * (this.canvasSize.w - 100)),
-						0,
-						1
-					)
-				);
-
-			// Speed up
-			this.frames % 750 === 0 &&
-				this.speedup.push(
-					new speedUp(
-						this.ctx,
-						'speedup.png',
-						50,
-						50,
-						Math.floor(Math.random() * (this.canvasSize.w - 100)),
-						0,
-						1
-					)
-				);
-
-			// vida extra tras colisionar player con vida extra
-			this.powerups.forEach((power, idx) => {
-				power.draw();
-				power.move();
-
-				if (this.isCollision(this.player, power)) {
-					this.powerups.splice(idx, 1);
-					this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + this.lifes.length * 50, 20));
-					this.scorePoints(50);
-				}
-			});
-			// hit coronavirus method
+			this.powerUpsAppear();
+			this.shootMore();
+			this.extraLife();
+			this.slowDown();
+			this.speedUpPower();
 			this.hitCoronavirus();
-
-			// double shoot tras colisionar con shootmore
-			this.shootmore.forEach((shoot, idx) => {
-				shoot.draw();
-				shoot.move();
-				// shoot.setNewListener()
-				if (this.isCollision(this.player, shoot)) {
-					this.shootmore.splice(idx, 1);
-					this.scorePoints(50);
-					this.player.canShoot = true //
-					
-				}
-			});
-
-			// slow down tras colisionar con player
-			this.powerdown.forEach((power, idx) => {
-				power.draw();
-				power.move();
-
-				if (this.isCollision(this.player, power)) {
-					this.powerdown.splice(idx, 1);
-					this.player.velX -= 10;
-					this.lessScorePoints(50);
-				}
-			});
-
-			// speed up tras colisionar con player
-			this.speedup.forEach((power, idx) => {
-				power.draw();
-				power.move();
-
-				if (this.isCollision(this.player, power)) {
-					this.speedup.splice(idx, 1);
-
-					this.player.velX += 1;
-					this.scorePoints(50);
-				}
-			});
-
-			// cambia de direccion tras colisionar con player y quita una vida
-			this.coronavirus.forEach((corona) => {
-				if (this.isCollision(corona, this.player)) {
-					corona.velX *= -1;
-					corona.velY *= -1;
-					this.lifes.pop();
-					this.lessScorePoints(150)
-				}
-			});
+			this.changeDirectionAfterCollision();
 
 			// set game over si no hay mas vidas
 			if (this.lifes.length === 0) {
 				this.gameOver();
 			}
-
 			// set you win si no hay mas coronavirus
 			if (this.coronavirus.length === 0) {
-				console.log(this.coronavirus.length);
-
 				this.youWon();
 			}
-
 			this.clearBullets();
 		}, 1000 / this.fps);
 	},
 
+	powerUpsAppear() {
+		// Vida Extra
+		this.frames % 1500 === 0 &&
+			this.powerups.push(
+				new powerUp(
+					this.ctx,
+					'powerup.png',
+					50,
+					50,
+					Math.floor(Math.random() * (this.canvasSize.w - 100)),
+					0,
+					1
+				)
+			);
+
+		// Double shot
+		this.frames % 800 === 0 &&
+			this.shootmore.push(
+				new shootMore(
+					this.ctx,
+					'doubleshoot.png',
+					50,
+					50,
+					Math.floor(Math.random() * (this.canvasSize.w - 100)),
+					0,
+					1
+				)
+			);
+
+		// Slow Down
+		this.frames % 400 === 0 &&
+			this.powerdown.push(
+				new powerDown(
+					this.ctx,
+					'snail.png',
+					50,
+					50,
+					Math.floor(Math.random() * (this.canvasSize.w - 100)),
+					0,
+					1
+				)
+			);
+
+		// Speed up
+		this.frames % 600 === 0 &&
+			this.speedup.push(
+				new speedUp(
+					this.ctx,
+					'speedup.png',
+					50,
+					50,
+					Math.floor(Math.random() * (this.canvasSize.w - 100)),
+					0,
+					1
+				)
+			);
+	},
+
+	slowDown() {
+		// slow down tras colisionar con player
+		this.powerdown.forEach((power, idx) => {
+			power.draw();
+			power.move();
+
+			if (this.isCollision(this.player, power)) {
+				this.powerdown.splice(idx, 1);
+				this.player.velX -= 4;
+				this.powerDownAudio.play();
+				this.lessScorePoints(50);
+			}
+		});
+	},
+
+	speedUpPower() {
+		// speed up tras colisionar con player
+		this.speedup.forEach((power, idx) => {
+			power.draw();
+			power.move();
+
+			if (this.isCollision(this.player, power)) {
+				this.speedup.splice(idx, 1);
+				this.extraLifeAudio.play();
+				this.player.velX += 3;
+				this.scorePoints(50);
+			}
+		});
+	},
+
+	extraLife() {
+		// vida extra tras colisionar player con vida extra
+		this.powerups.forEach((power, idx) => {
+			power.draw();
+			power.move();
+
+			if (this.isCollision(this.player, power)) {
+				this.powerups.splice(idx, 1);
+				this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100 + this.lifes.length * 50, 20));
+				this.extraLifeAudio.play();
+				this.scorePoints(50);
+			}
+		});
+	},
+
+	shootMore() {
+		// double shoot tras colisionar con shootmore
+		this.shootmore.forEach((shoot, idx) => {
+			shoot.draw();
+			shoot.move();
+			if (this.isCollision(this.player, shoot)) {
+				this.shootmore.splice(idx, 1);
+				this.scorePoints(50);
+				this.player.canShoot = true;
+				this.extraLifeAudio.play();
+				setTimeout(() => {
+					this.player.canShoot = false;
+				}, 5000);
+			}
+		});
+	},
+
+	changeDirectionAfterCollision() {
+		// cambia de direccion tras colisionar con player y quita una vida
+		this.coronavirus.forEach((corona) => {
+			if (this.isCollision(corona, this.player)) {
+				corona.velX *= -1;
+				corona.velY *= -1;
+				this.lifes.pop();
+				this.lifeTakenAudio.play();
+				this.lessScorePoints(150);
+			}
+		});
+	},
+
 	newBullet() {
 		// create an instance of bullet after pressing SPACE bar
-		if (this.bullets.length < 1) {
+		if (this.bullets.length < 1 || this.player.canShoot) {
 			this.bullets.push(new Bullet(this.ctx, 'waterdrop.png', 10, 100, this.player.posX, this.player.posY));
 		}
 	},
@@ -259,8 +280,8 @@ const game = {
 			new Coronavirus(
 				this.ctx,
 				'coronito.gif',
-				250,
-				250,
+				200,
+				200,
 				3,
 				0.1,
 				10,
@@ -268,7 +289,8 @@ const game = {
 				undefined,
 				this.canvasSize.w,
 				this.canvasSize.h,
-				0.1
+				0.1,
+				200
 			)
 		);
 		this.lifes.push(new Life(this.ctx, 'Heart.png', 50, 50, 1100, 20));
@@ -285,10 +307,30 @@ const game = {
 		);
 	},
 
+	isRoundCollision(obj1, obj2) {
+		// vertical and horizontal distance between the circle center and the rectangle center
+		let distX = Math.abs(obj2.posX - obj1.posX - obj1.sizes.w / 2);
+		let distY = Math.abs(obj2.posY - obj1.posY - obj1.sizes.h / 2);
+		
+		// if the distance is greater than half Circle + half rect they are too far apart to be colliding
+		if (distX > (obj1.sizes.w / 2 + obj2.radius)) { return false; }
+		if (distY > (obj1.sizes.h / 2 + obj2.radius)) { return false; }
+
+		//if the distance is less than half rect they collide
+		if (distX <= (obj1.sizes.w / 2)) { return true; }
+		if (distY <= (obj1.sizes.h / 2)) { return true; }
+
+		// test for collision at rect corner
+		let dx = distX - obj1.sizes.w / 2;
+		let dy = distY - obj1.sizes.h / 2;
+		return (dx * dx + dy * dy <= (obj2.radius * obj2.radius));
+	},
+
 	hitCoronavirus() {
+		// hit coronavirus method
 		this.coronavirus.forEach((corona, idx) => {
 			this.bullets.forEach((bullet, index) => {
-				if (this.isCollision(bullet, corona)) {
+				if (this.isRoundCollision(bullet, corona)) {
 					this.killBullet(index);
 					this.divideCoronavirus(corona, idx);
 					this.scorePoints(100);
@@ -311,11 +353,12 @@ const game = {
 					(deletedCoronavirus.velX *= 1.05),
 					(deletedCoronavirus.velY *= 1.05),
 					deletedCoronavirus.posX + 50,
-					deletedCoronavirus.posY - deletedCoronavirus.posY +150,
+					deletedCoronavirus.posY - deletedCoronavirus.posY + 150,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH,
-					(deletedCoronavirus.gravity += 0.0111)
+					(deletedCoronavirus.gravity += 0.0111),
+					deletedCoronavirus.radius /1.7
 				)
 			);
 			this.coronavirus.push(
@@ -327,11 +370,12 @@ const game = {
 					(deletedCoronavirus.velX *= -1.05),
 					(deletedCoronavirus.velY *= 1.05),
 					deletedCoronavirus.posX - 50,
-					deletedCoronavirus.posY - deletedCoronavirus.posY +150,
+					deletedCoronavirus.posY - deletedCoronavirus.posY + 150,
 					nextDivision,
 					deletedCoronavirus.canvasW,
 					deletedCoronavirus.canvasH,
-					(deletedCoronavirus.gravity += 0.0111)
+					(deletedCoronavirus.gravity += 0.0111),
+					deletedCoronavirus.radius /1.7
 				)
 			);
 		}
@@ -342,8 +386,9 @@ const game = {
 	},
 
 	gameOver() {
+		this.backgroundAudio.pause();
+		this.loseSound.play();
 		clearInterval(this.interval);
-
 		// window.clearInterval(this.interval);
 		document.getElementById('canvas').style.display = 'none';
 		document.getElementById('lose-score').style.display = 'block';
@@ -352,7 +397,10 @@ const game = {
 			document.location.reload();
 		};
 	},
+
 	youWon() {
+		this.backgroundAudio.pause();
+		this.winSound.play();
 		clearInterval(this.interval);
 		document.getElementById('canvas').style.display = 'none';
 		document.getElementById('win-score').style.display = 'block';

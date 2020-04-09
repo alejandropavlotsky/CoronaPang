@@ -1,5 +1,5 @@
 class Coronavirus {
-	constructor(ctx, url, width, height, velX, velY, posX, posY, actualDivision = 0, canvasW, canvasH, gravity) {
+	constructor(ctx, url, width, height, velX, velY, posX, posY, actualDivision = 0, canvasW, canvasH, gravity, radius) {
 		this.ctx = ctx;
 		this.url = url;
 		this.sizes = {
@@ -8,7 +8,7 @@ class Coronavirus {
 		};
 		this.canvasW = canvasW
 		this.canvasH = canvasH
-
+		this.radius = radius
 		// start position
 		this.posX = posX;	//1
 		this.posY = posY;	//0
@@ -44,7 +44,7 @@ class Coronavirus {
 		this.velY += this.gravity;
 		this.posY += this.velY;
 		// Collide with canvas		
-		this.posY > this.canvasH - this.sizes.h ? (this.velY *= -1) : null;
+		this.posY > this.canvasH - (this.sizes.h -10) ? (this.velY *= -1) : null;
 		this.posY < 0 ? (this.velY *= -1) : null;
 		
 		this.posX > this.canvasW - this.sizes.w ? (this.velX *= -1) : null;
