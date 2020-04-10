@@ -93,6 +93,7 @@ const game = {
 
 	start() {
 		this.reset();
+		this.backgroundAudio.loop = true
 		this.backgroundAudio.play();
 		this.interval = setInterval(() => {
 			this.frames > 5000 ? (this.frames = 0) : null;
